@@ -562,15 +562,17 @@ function exportCSV() {{
     link.download = 'suitable_sites.csv'; link.click();
 }}
 
-// ===== Bidirectional Selection =====
+// ===== Map-Table Bidirectional Selection =====
 var selectedSiteId = null;
 
+// Map feature click → highlight table row
 window.addEventListener('message', function(e) {{
     if (e.data && e.data.type === 'siteSelect') {{
         highlightSite(parseInt(e.data.siteId));
     }}
 }});
 
+// Table row click → highlight map feature
 $('#sites-table tbody').on('click', 'tr', function() {{
     var table = $('#sites-table').DataTable();
     var data = table.row(this).data();
@@ -580,24 +582,58 @@ $('#sites-table tbody').on('click', 'tr', function() {{
 }});
 
 function highlightSite(siteId) {{
-    if (selectedSiteId) {{
-        $('#sites-table tbody tr').removeClass('selected');
-    }}
+    if (selectedSiteId) $('#sites-table tbody tr').removeClass('selected');
     selectedSiteId = siteId;
     var table = $('#sites-table').DataTable();
     table.rows().every(function() {{
         if (parseInt(this.data()[0]) === siteId) {{
             $(this.node()).addClass('selected');
-            if (this.node()) {{
-                this.node().scrollIntoView({{behavior: 'smooth', block: 'center'}});
-            }}
+            if (this.node()) this.node().scrollIntoView({{behavior: 'smooth', block: 'center'}});
         }}
     }});
     var iframe = document.querySelector('.map-container iframe');
-    if (iframe && iframe.contentWindow) {{
-        iframe.contentWindow.postMessage({{type: 'highlightSite', siteId: siteId}}, '*');
-    }}
+    if (!iframe || !iframe.contentWindow) return;
+    var win = iframe.contentWindow;
+    var siteMap = win._siteMap;
+    if (!siteMap) return;
+    siteMap.eachLayer(function(layer) {{
+        if (!layer.siteIdx) return;
+        if (layer.siteIdx === siteId) {{
+            layer.setStyle({{weight: 6, color: '#fdff00', fillColor: '#ffd700', fillOpacity: 0.9}});
+            layer.bringToFront();
+            layer.openPopup();
+        }} else {{
+            layer.closePopup();
+            layer.setStyle(layer.origStyle || {{weight: 2, color: '#006837', fillColor: '#31a354', fillOpacity: 0.75}});
+        }}
+    }});
 }}
+
+// Assign indices and click handlers to map features
+(function trySetup() {{
+    var iframe = document.querySelector('.map-container iframe');
+    if (!iframe || !iframe.contentWindow) {{ setTimeout(trySetup, 300); return; }}
+    var win = iframe.contentWindow;
+    if (!win.L || !win.L.Map) {{ setTimeout(trySetup, 500); return; }}
+    var siteMap = null;
+    for (var k in win) {{
+        if (k.indexOf('map_') === 0 && win[k] instanceof win.L.Map) {{ siteMap = win[k]; break; }}
+    }}
+    if (!siteMap) {{ setTimeout(trySetup, 500); return; }}
+    var counter = 0;
+    siteMap.eachLayer(function(layer) {{
+        if (layer.feature && layer.feature.properties && layer.feature.properties.area_sqm) {{
+            counter++;
+            layer.siteIdx = counter;
+            layer.origStyle = {{weight: 2, color: '#006837', fillColor: '#31a354', fillOpacity: 0.75}};
+            layer.off('click');
+            layer.on('click', function() {{
+                window.postMessage({{type: 'siteSelect', siteId: this.siteIdx}}, '*');
+            });
+        }}
+    }});
+    win._siteMap = siteMap;
+}})();
 
 function exportGeoJSON() {{
     var features = sitesData.map(function(s) {{
