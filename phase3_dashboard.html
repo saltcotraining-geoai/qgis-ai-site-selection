@@ -446,7 +446,7 @@ body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; }
         function geo_json_52c30a5d735699685a169b013581070c_styler(feature) {
             switch(feature.properties.fid) {
                 default:
-                    return {&quot;color&quot;: &quot;#1f78b4&quot;, &quot;fillColor&quot;: &quot;#1f78b4&quot;, &quot;fillOpacity&quot;: 0.08, &quot;weight&quot;: 1};
+                    return {&quot;color&quot;: &quot;#1f78b4&quot;, &quot;fillColor&quot;: &quot;#1f78b4&quot;, &quot;fillOpacity&quot;: 0.2, &quot;weight&quot;: 2};
             }
         }
 
@@ -477,7 +477,7 @@ body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; }
         function geo_json_f0bae6945f619b73a1f4c51978eb4d7c_styler(feature) {
             switch(feature.properties.fid) {
                 default:
-                    return {&quot;color&quot;: &quot;#e31a1c&quot;, &quot;fillColor&quot;: &quot;#e31a1c&quot;, &quot;fillOpacity&quot;: 0.08, &quot;weight&quot;: 1};
+                    return {&quot;color&quot;: &quot;#e31a1c&quot;, &quot;fillColor&quot;: &quot;#e31a1c&quot;, &quot;fillOpacity&quot;: 0.2, &quot;weight&quot;: 2};
             }
         }
 
@@ -508,7 +508,7 @@ body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; }
         function geo_json_fb630f2de708a500a8945cbe173515ca_styler(feature) {
             switch(feature.properties.fid) {
                 default:
-                    return {&quot;color&quot;: &quot;#33a02c&quot;, &quot;fillColor&quot;: &quot;#33a02c&quot;, &quot;fillOpacity&quot;: 0.08, &quot;weight&quot;: 1};
+                    return {&quot;color&quot;: &quot;#33a02c&quot;, &quot;fillColor&quot;: &quot;#33a02c&quot;, &quot;fillOpacity&quot;: 0.2, &quot;weight&quot;: 2};
             }
         }
 
@@ -539,7 +539,7 @@ body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; }
         function geo_json_5b42e20b93fb5130d424085d67c740d5_styler(feature) {
             switch(feature.properties.fid) {
                 default:
-                    return {&quot;color&quot;: &quot;#6a3d9a&quot;, &quot;fillColor&quot;: &quot;#6a3d9a&quot;, &quot;fillOpacity&quot;: 0.08, &quot;weight&quot;: 1};
+                    return {&quot;color&quot;: &quot;#6a3d9a&quot;, &quot;fillColor&quot;: &quot;#6a3d9a&quot;, &quot;fillOpacity&quot;: 0.2, &quot;weight&quot;: 2};
             }
         }
 
@@ -841,6 +841,22 @@ function highlightSite(siteId) {
         }
     });
     win._siteMap = siteMap;
+
+    // Build layer control for overlays (school, highway, river, urban zones)
+    var overlayLayers = {};
+    var overlayNames = ['School Zone (1000m)', 'Highway Exclusion (100m)', 'River Exclusion (300m)', 'Urban Zone'];
+    var overlayIdx = 0;
+    siteMap.eachLayer(function(layer) {
+        if (layer.feature && layer.feature.properties && 'fid' in layer.feature.properties && !layer.feature.properties.area_sqm) {
+            var name = overlayNames[overlayIdx] || 'Overlay ' + (overlayIdx + 1);
+            overlayLayers[name] = layer;
+            layer.setStyle({fillOpacity: 0.2, weight: 2});
+            overlayIdx++;
+        }
+    });
+    if (overlayIdx > 0) {
+        L.control.layers(null, overlayLayers, {collapsed: false}).addTo(siteMap);
+    }
 })();
 
 function exportGeoJSON() {

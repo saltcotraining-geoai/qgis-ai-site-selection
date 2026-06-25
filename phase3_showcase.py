@@ -244,11 +244,14 @@ for key, label, color in [
         with open(p) as fh:
             data = json.load(fh)
         folium.GeoJson(data, name=label,
-            style_function=lambda f, c=color: {"color": c, "weight": 1, "fillColor": c, "fillOpacity": 0.08}
+            style_function=lambda f, c=color: {"color": c, "weight": 2, "fillColor": c, "fillOpacity": 0.2}
         ).add_to(m)
 
 plugins.Fullscreen().add_to(m)
 plugins.MousePosition().add_to(m)
+
+# Layer control for toggling overlays
+folium.LayerControl(collapsed=False).add_to(m)
 
 # Custom JS: highlight site when parent sends message (table row click)
 folium.Element("""
