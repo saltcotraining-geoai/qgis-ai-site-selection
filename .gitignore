@@ -26,3 +26,12 @@ Thumbs.db
 dataset/satellite_image.tif
 dataset/satellite_image.tif.aux.xml
 *.pptx
+#bio file
+freelancer_bio.md
+generate_presentation.py
+presentation_outline.md
+production_roadmap.txt
+QGIS_AI_Site_Selection_Presentation.pptx
+site_analysis.qgz
+youtube_demo.script.md
+youtube_demo.txt
