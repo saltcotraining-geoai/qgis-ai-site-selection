@@ -1,0 +1,14 @@
+##  Production Roadmap (Phase 3)
+
+```bash
+# Step 1: Load into PostgreSQL/PostGIS
+ogr2ogr -f "PostgreSQL" PG:"dbname=gis" suitable_sites.geojson \
+  -nln analysis.suitable_sites
+
+# Step 2: Publish via GeoServer WMS
+# (Point GeoServer data store to your PostgreSQL database)
+
+# Step 3: Build Leaflet web map consuming GeoServer WMS
+```
+
+Full architecture: `PyQGIS → PostgreSQL/PostGIS → GeoServer → Leaflet`

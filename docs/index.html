@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saltibin GeoAI — Geospatial Training & Capacity Building</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; line-height: 1.6; }
+
+/* Hero */
+.hero {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  color: white; padding: 4rem 2rem; text-align: center; position: relative; overflow: hidden;
+}
+.hero::after {
+  content: ''; position: absolute; top: -40%; right: -10%;
+  width: 600px; height: 600px; background: radial-gradient(circle, rgba(79,195,247,0.06) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.hero-content { position: relative; z-index: 1; max-width: 700px; margin: 0 auto; }
+.hero h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -1px; }
+.hero h1 i { color: #4fc3f7; margin-right: 12px; }
+.hero .tagline { font-size: 1.2rem; color: rgba(255,255,255,0.7); margin-top: 8px; }
+.hero .divider { width: 60px; height: 4px; background: #4fc3f7; margin: 20px auto; border-radius: 2px; }
+.hero p { font-size: 1rem; color: rgba(255,255,255,0.6); max-width: 550px; margin: 0 auto; }
+
+/* Social links */
+.social-bar {
+  display: flex; justify-content: center; gap: 1rem; margin-top: 2rem; flex-wrap: wrap;
+}
+.social-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 0.7rem 1.5rem; border-radius: 50px; text-decoration: none;
+  font-size: 0.9rem; font-weight: 600; transition: all 0.2s;
+  border: 1px solid rgba(255,255,255,0.15); color: white; background: rgba(255,255,255,0.08);
+}
+.social-btn:hover { transform: translateY(-2px); background: rgba(255,255,255,0.15); }
+.social-btn.youtube:hover { background: #ff0000; border-color: #ff0000; }
+.social-btn.github:hover { background: #333; border-color: #333; }
+.social-btn.globe:hover { background: #0f3460; border-color: #0f3460; }
+
+/* Sections */
+.container { max-width: 1100px; margin: 0 auto; padding: 0 2rem; }
+section { padding: 3rem 0; }
+section h2 {
+  font-size: 1.6rem; font-weight: 700; margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 10px;
+}
+section h2 i { color: #0f3460; }
+.section-divider { width: 40px; height: 3px; background: #4fc3f7; border-radius: 2px; margin-bottom: 1.5rem; }
+
+/* About */
+.about-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+}
+@media (max-width: 700px) { .about-grid { grid-template-columns: 1fr; } }
+.about-card {
+  background: white; border-radius: 12px; padding: 1.8rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); border-left: 4px solid #0f3460;
+}
+.about-card h3 { font-size: 1.2rem; font-weight: 600; margin-bottom: 0.8rem; }
+.about-card p { font-size: 0.95rem; color: #555; }
+
+/* Repos */
+.repo-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.2rem;
+}
+.repo-card {
+  background: white; border-radius: 12px; padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-decoration: none; color: inherit;
+  transition: transform 0.2s; border: 1px solid #eee;
+}
+.repo-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+.repo-card h3 { font-size: 1.1rem; font-weight: 600; color: #0f3460; }
+.repo-card h3 i { margin-right: 8px; color: #4fc3f7; }
+.repo-card p { font-size: 0.85rem; color: #666; margin-top: 8px; }
+.repo-card .badge {
+  display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 50px;
+  background: #e8f4fd; color: #0f3460; margin-top: 10px; font-weight: 500;
+}
+
+/* Services */
+.services-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 1.2rem;
+}
+.service-item {
+  background: white; border-radius: 12px; padding: 1.5rem; text-align: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+.service-item i { font-size: 2rem; color: #0f3460; margin-bottom: 0.8rem; }
+.service-item h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; }
+.service-item p { font-size: 0.85rem; color: #666; }
+
+/* Contact */
+.contact-box {
+  background: white; border-radius: 12px; padding: 2rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06); text-align: center;
+}
+.contact-box p { font-size: 0.95rem; color: #555; margin-bottom: 1rem; }
+.contact-box .email {
+  font-size: 1.2rem; font-weight: 600; color: #0f3460; text-decoration: none;
+}
+.contact-box .email:hover { color: #4fc3f7; }
+
+/* Footer */
+.footer {
+  text-align: center; padding: 2rem; font-size: 0.8rem; color: #999;
+  border-top: 1px solid #e0e0e0; margin-top: 2rem;
+}
+
+/* Utility */
+.text-center { text-align: center; }
+.mt-2 { margin-top: 2rem; }
+</style>
+</head>
+<body>
+
+<!-- Hero -->
+<div class="hero">
+  <div class="hero-content">
+    <h1><i class="fas fa-globe-africa"></i> Saltibin GeoAI</h1>
+    <div class="tagline">Geospatial Training & Automated Workflows</div>
+    <div class="divider"></div>
+    <p>Open-source GIS · PyQGIS · AI-powered spatial analysis.<br>
+    Capacity building for universities, NGOs, and professionals in limited-resource regions.</p>
+
+    <div class="social-bar">
+      <a href="https://github.com/saltcotraining-geoai" target="_blank" class="social-btn github">
+        <i class="fab fa-github"></i> GitHub
+      </a>
+      <a href="https://youtube.com/@Saltco_GeoTraining" target="_blank" class="social-btn youtube">
+        <i class="fab fa-youtube"></i> YouTube
+      </a>
+      <a href="#" class="social-btn globe">
+        <i class="fas fa-building"></i> Saltibin Training
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+<!-- About -->
+<section>
+  <h2><i class="fas fa-user"></i> About</h2>
+  <div class="section-divider"></div>
+  <div class="about-grid">
+    <div class="about-card">
+      <h3><i class="fas fa-graduation-cap" style="color:#4fc3f7;"></i> Background</h3>
+      <p>MS in GIS & Natural Resource Management. 15+ years as a GIS Analyst in Houston, Texas.
+      Volunteered teaching QGIS, Python, and ESL at universities in Sudan before the war.
+      Now creating open-source geospatial training for the world.</p>
+    </div>
+    <div class="about-card">
+      <h3><i class="fas fa-bullseye" style="color:#4fc3f7;"></i> Mission</h3>
+      <p>Make professional GIS automation accessible where resources are limited.
+      From watershed management to site selection — using only free, open-source tools.
+      Teaching practical workflows that solve real problems.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Latest Project -->
+<section>
+  <h2><i class="fas fa-code"></i> Featured Project</h2>
+  <div class="section-divider"></div>
+  <div class="repo-grid">
+    <a href="https://github.com/saltcotraining-geoai/qgis-ai-site-selection" target="_blank" class="repo-card">
+      <h3><i class="fas fa-map-marked-alt"></i> QGIS AI Site Selection</h3>
+      <p>Automated 6-criteria site selection analysis using PyQGIS processing algorithms.
+      From 4,708 buildings to 9 suitable sites in one command.
+      Generates interactive dashboard with data table, exports, and PDF report.</p>
+      <span class="badge"><i class="fas fa-star"></i> Featured Demo</span>
+    </a>
+  </div>
+</section>
+
+<!-- Services -->
+<section>
+  <h2><i class="fas fa-cogs"></i> Services</h2>
+  <div class="section-divider"></div>
+  <div class="services-grid">
+    <div class="service-item">
+      <i class="fas fa-chalkboard-teacher"></i>
+      <h4>Virtual Workshops</h4>
+      <p>Live QGIS + PyQGIS training for universities and organizations. Custom curriculum available.</p>
+    </div>
+    <div class="service-item">
+      <i class="fas fa-tint"></i>
+      <h4>Watershed Management</h4>
+      <p>Automated watershed delineation, flood risk mapping, and hydrological analysis with open data.</p>
+    </div>
+    <div class="service-item">
+      <i class="fas fa-robot"></i>
+      <h4>GIS Automation</h4>
+      <p>Custom PyQGIS scripts to replace repetitive manual workflows. One-command solutions.</p>
+    </div>
+    <div class="service-item">
+      <i class="fas fa-database"></i>
+      <h4>Web GIS Deployment</h4>
+      <p>PostgreSQL/PostGIS to GeoServer to Leaflet. Production-ready spatial data infrastructure.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Contact -->
+<section>
+  <h2><i class="fas fa-envelope"></i> Contact</h2>
+  <div class="section-divider"></div>
+  <div class="contact-box">
+    <p><i class="fas fa-building" style="color:#4fc3f7;"></i>
+    <strong>Saltibin for Training & Capacity Building</strong></p>
+    <p>For workshop inquiries, consulting, or collaboration:</p>
+    <a href="mailto:training@saltibin.com" class="email"><i class="fas fa-envelope"></i> training@saltibin.com</a>
+    <p style="margin-top:1rem;font-size:0.85rem;color:#999;">
+    <i class="fab fa-youtube" style="color:#ff0000;"></i>
+    <a href="https://youtube.com/@Saltco_GeoTraining" target="_blank" style="color:#0f3460;">youtube.com/@Saltco_GeoTraining</a>
+    &nbsp;·&nbsp;
+    <i class="fab fa-github" style="color:#333;"></i>
+    <a href="https://github.com/saltcotraining-geoai" target="_blank" style="color:#0f3460;">github.com/saltcotraining-geoai</a>
+    </p>
+  </div>
+</section>
+
+</div>
+
+<div class="footer">
+  <i class="fas fa-globe"></i> Saltibin GeoAI &mdash; Geospatial training for a resilient world.
+  <br>Dataset: <a href="https://docs.qgis.org/latest/en/docs/training_manual/" style="color:#999;">QGIS Training Manual</a> exercise_data &copy; <a href="https://openstreetmap.org/copyright" style="color:#999;">OpenStreetMap contributors</a> (ODbL)
+  <br>Built with <i class="fas fa-heart" style="color:#e74c3c;"></i> using open-source tools.
+</div>
+
+</body>
+</html>
