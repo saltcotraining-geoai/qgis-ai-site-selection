@@ -840,22 +840,26 @@ function highlightSite(siteId) {
             });
         }
     });
-    // Build layer control for overlays (school, highway, river, urban zones)
+    // Build layer control using original GeoJson GROUP objects (not individual features)
     var winL = win.L;
-    var overlayLayers = {};
-    var overlayNames = ['School Zone (1000m)', 'Highway Exclusion (100m)', 'River Exclusion (300m)', 'Urban Zone'];
-    var overlayIdx = 0;
-    siteMap.eachLayer(function(layer) {
-        if (layer.feature && layer.feature.properties && 'fid' in layer.feature.properties && !layer.feature.properties.area_sqm) {
-            var name = overlayNames[overlayIdx] || 'Overlay ' + (overlayIdx + 1);
-            overlayLayers[name] = layer;
-            layer.setStyle({fillOpacity: 0.2, weight: 2});
-            overlayIdx++;
+    var overlayMaps = {};
+    var overlayNames2 = ['School Zone (1000m)', 'Highway Exclusion (100m)', 'River Exclusion (300m)', 'Urban Zone'];
+    var oi = 0;
+    for (var k in win) {
+        if (k.indexOf('geo_json_') === 0 && win[k] instanceof winL.GeoJSON) {
+            var gj = win[k];
+            var hasArea = false;
+            gj.eachLayer(function(f) {
+                if (f.feature && f.feature.properties && f.feature.properties.area_sqm) hasArea = true;
+            });
+            if (!hasArea && oi < overlayNames2.length) {
+                overlayMaps[overlayNames2[oi]] = gj;
+                gj.setStyle({fillOpacity: 0.2, weight: 2});
+                oi++;
+            }
         }
-    });
-    if (overlayIdx > 0) {
-        winL.control.layers(null, overlayLayers, {collapsed: false}).addTo(siteMap);
     }
+    if (oi > 0) winL.control.layers(null, overlayMaps, {collapsed: false}).addTo(siteMap);
     win._siteMap = siteMap;
 })();
 
