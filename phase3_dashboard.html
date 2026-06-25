@@ -840,9 +840,8 @@ function highlightSite(siteId) {
             });
         }
     });
-    win._siteMap = siteMap;
-
     // Build layer control for overlays (school, highway, river, urban zones)
+    var winL = win.L;
     var overlayLayers = {};
     var overlayNames = ['School Zone (1000m)', 'Highway Exclusion (100m)', 'River Exclusion (300m)', 'Urban Zone'];
     var overlayIdx = 0;
@@ -855,8 +854,9 @@ function highlightSite(siteId) {
         }
     });
     if (overlayIdx > 0) {
-        L.control.layers(null, overlayLayers, {collapsed: false}).addTo(siteMap);
+        winL.control.layers(null, overlayLayers, {collapsed: false}).addTo(siteMap);
     }
+    win._siteMap = siteMap;
 })();
 
 function exportGeoJSON() {
