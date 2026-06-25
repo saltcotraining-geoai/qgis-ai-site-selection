@@ -135,38 +135,6 @@ graph TD
 
 ---
 
-##  YouTube Demo
-
-Watch the full walkthrough: **[youtube.com/@Saltco_GeoTraining](https://youtube.com/@Saltco_GeoTraining)**
-
-### In the video:
-- 00:00 — Intro: The problem with manual GIS
-- 01:30 — The dataset and criteria
-- 03:00 — Running `python3 demo.py` (the magic command)
-- 05:00 — The filtering cascade (WOW moment)
-- 07:00 — Dashboard reveal
-- 09:00 — How it works under the hood
-- 10:00 — PostgreSQL + GeoServer production roadmap
-
----
-
-##  Production Roadmap (Phase 3)
-
-```bash
-# Step 1: Load into PostgreSQL/PostGIS
-ogr2ogr -f "PostgreSQL" PG:"dbname=gis" suitable_sites.geojson \
-  -nln analysis.suitable_sites
-
-# Step 2: Publish via GeoServer WMS
-# (Point GeoServer data store to your PostgreSQL database)
-
-# Step 3: Build Leaflet web map consuming GeoServer WMS
-```
-
-Full architecture: `PyQGIS → PostgreSQL/PostGIS → GeoServer → Leaflet`
-
----
-
 ##  License & Attribution
 
 **Code:** MIT — free to use, modify, and share.
@@ -182,7 +150,7 @@ Contains information from the QGIS project (CC-BY-SA).
 **YouTube:** [youtube.com/@Saltco_GeoTraining](https://youtube.com/@Saltco_GeoTraining)
 **GitHub:** [github.com/saltcotraining-geoai/qgis-ai-site-selection](https://github.com/saltcotraining-geoai/qgis-ai-site-selection)
 **Portfolio:** [saltcotraining-geoai.github.io](https://saltcotraining-geoai.github.io)
-**Company:** Saltibin for Training & Capacity Building
-**Email:** training@saltibin.com
+**Company:** Saltco for Training & Capacity Building
+**Email:** saltco.training@gmail.com
 
 *"The best GIS analyst is the one who automates their workflow."*
