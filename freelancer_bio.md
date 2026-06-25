@@ -5,7 +5,7 @@ With over 25 years of combined education and professional experience in Surveyin
 My work spans both sides of the equator: 15+ years as a GIS Analyst in Houston, Texas — and volunteer teaching of QGIS, Python, and ESL at universities in Sudan before the war. That blend of industry depth and grassroots teaching gives me a practical, no-fluff approach to geospatial problem-solving.
 
 What I do:
-- Senior Survey & GIS Analysis — surveying engineering, spatial data management, site selection, watershed analysis
+- Senior Survey & GIS Analyst — surveying engineering, spatial data management, site selection, watershed analysis
 - PyQGIS Automation — custom scripts that replace hours of clicking with one command
 - Training & Mentoring — virtual workshops for universities, NGOs, and professionals in limited-resource regions
 - Freelance Consulting — open-source GIS solutions (QGIS, PostGIS, GeoServer, Python)
