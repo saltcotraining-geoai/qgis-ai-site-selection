@@ -202,13 +202,25 @@ folium.TileLayer("https://mt1.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
 # Exclusion/analysis zones
 with open(sites_json) as f:
     sites_gj_data = json.load(f)
+
+# Add sequential ID to each feature for map-table linking
+for idx, feature in enumerate(sites_gj_data['features']):
+    feature['properties']['site_id'] = idx + 1
+
 folium.GeoJson(
     sites_gj_data,
     name="Suitable Sites",
     style_function=lambda f: {"color": "#006837", "weight": 2, "fillColor": "#31a354", "fillOpacity": 0.75},
     highlight_function=lambda f: {"weight": 4, "color": "#fdff00"},
-    tooltip=folium.GeoJsonTooltip(fields=["area_sqm", "pop_estimate"], aliases=["Area (m²):", "Population:"], localize=True),
-    popup=folium.GeoJsonPopup(fields=["area_sqm", "pop_estimate", "name"], aliases=["Area (m²):", "Population:", "Name:"]),
+    tooltip=folium.GeoJsonTooltip(fields=["site_id", "area_sqm", "pop_estimate"], aliases=["Site #:", "Area (m²):", "Population:"], localize=True),
+    popup=folium.GeoJsonPopup(fields=["site_id", "name", "area_sqm", "pop_estimate"], aliases=["Site #:", "Name:", "Area (m²):", "Population:"]),
+    on_each_feature="""function(feature, layer) {
+        layer.on({
+            click: function(e) {
+                window.parent.postMessage({type: 'siteSelect', siteId: feature.properties.site_id || 0}, '*');
+            }
+        });
+    }""",
     show=True
 ).add_to(m)
 
@@ -237,6 +249,35 @@ for key, label, color in [
 
 plugins.Fullscreen().add_to(m)
 plugins.MousePosition().add_to(m)
+
+# Custom JS: highlight site when parent sends message (table row click)
+folium.Element("""
+<script>
+(function() {
+    var siteMap = null;
+    for (var k in window) {
+        if (k.indexOf('map_') === 0 && window[k] instanceof L.Map) { siteMap = window[k]; break; }
+    }
+    if (!siteMap) return;
+    window.addEventListener('message', function(e) {
+        if (!e.data || e.data.type !== 'highlightSite' || !siteMap) return;
+        var target = e.data.siteId;
+        siteMap.eachLayer(function(layer) {
+            if (layer.feature && layer.feature.properties && layer.feature.properties.site_id) {
+                if (layer.feature.properties.site_id === target) {
+                    layer.setStyle({weight: 6, color: '#fdff00', fillColor: '#ffd700', fillOpacity: 0.9});
+                    layer.bringToFront();
+                    layer.openPopup();
+                } else {
+                    layer.closePopup();
+                    layer.setStyle({weight: 2, color: '#006837', fillColor: '#31a354', fillOpacity: 0.75});
+                }
+            }
+        });
+    });
+})();
+</script>
+""").add_to(m)
 
 # =====================================================================
 # BUILD DASHBOARD HTML
@@ -375,6 +416,8 @@ body {{ font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; }
 #sites-table thead th {{ background: #f8f9fc; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.3px; color: #555; padding: 10px 8px; border-bottom: 2px solid #e0e0e0; }}
 #sites-table tbody td {{ padding: 8px; border-bottom: 1px solid #f0f0f0; vertical-align: middle; }}
 #sites-table tbody tr:hover {{ background: #f0f7ff; }}
+#sites-table tbody tr.selected {{ background-color: #fff3cd !important; outline: 2px solid #ffc107; }}
+#sites-table tbody tr.selected:hover {{ background-color: #ffe8a1 !important; }}
 
 .dataTables_wrapper .dataTables_filter input {{
     border: 1px solid #ddd; border-radius: 6px; padding: 6px 12px; font-size: 0.8rem;
@@ -517,6 +560,43 @@ function exportCSV() {{
     var blob = new Blob([csv], {{ type: 'text/csv;charset=utf-8;' }});
     var link = document.createElement('a'); link.href = URL.createObjectURL(blob);
     link.download = 'suitable_sites.csv'; link.click();
+}}
+
+// ===== Bidirectional Selection =====
+var selectedSiteId = null;
+
+window.addEventListener('message', function(e) {{
+    if (e.data && e.data.type === 'siteSelect') {{
+        highlightSite(parseInt(e.data.siteId));
+    }}
+}});
+
+$('#sites-table tbody').on('click', 'tr', function() {{
+    var table = $('#sites-table').DataTable();
+    var data = table.row(this).data();
+    if (data && data[0]) {{
+        highlightSite(parseInt(data[0]));
+    }}
+}});
+
+function highlightSite(siteId) {{
+    if (selectedSiteId) {{
+        $('#sites-table tbody tr').removeClass('selected');
+    }}
+    selectedSiteId = siteId;
+    var table = $('#sites-table').DataTable();
+    table.rows().every(function() {{
+        if (parseInt(this.data()[0]) === siteId) {{
+            $(this.node()).addClass('selected');
+            if (this.node()) {{
+                this.node().scrollIntoView({{behavior: 'smooth', block: 'center'}});
+            }}
+        }}
+    }});
+    var iframe = document.querySelector('.map-container iframe');
+    if (iframe && iframe.contentWindow) {{
+        iframe.contentWindow.postMessage({{type: 'highlightSite', siteId: siteId}}, '*');
+    }}
 }}
 
 function exportGeoJSON() {{
