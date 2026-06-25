@@ -14,7 +14,7 @@
 
 📺 **Watch the demo:** [youtube.com/@Saltco_GeoTraining](https://youtube.com/@Saltco_GeoTraining)
 🌐 **Portfolio:** [saltcotraining-geoai.github.io](https://saltcotraining-geoai.github.io)
-📦 **Company:** Saltibin for Training & Capacity Building
+📦 **Company:** Saltco for Training & Capacity Building
 
 ---
 
@@ -182,7 +182,7 @@ Contains information from the QGIS project (CC-BY-SA).
 **YouTube:** [youtube.com/@Saltco_GeoTraining](https://youtube.com/@Saltco_GeoTraining)
 **GitHub:** [github.com/saltcotraining-geoai/qgis-ai-site-selection](https://github.com/saltcotraining-geoai/qgis-ai-site-selection)
 **Portfolio:** [saltcotraining-geoai.github.io](https://saltcotraining-geoai.github.io)
-**Company:** Saltibin for Training & Capacity Building
-**Email:** training@saltibin.com
+**Company:** Saltco for Training & Capacity Building
+**Email:** saltco.training@gmail.com
 
 *"The best GIS analyst is the one who automates their workflow."*
