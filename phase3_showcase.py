@@ -632,7 +632,7 @@ function highlightSite(siteId) {{
             layer.off('click');
             layer.on('click', function() {{
                 window.postMessage({{type: 'siteSelect', siteId: this.siteIdx}}, '*');
-            });
+            );
         }}
     }});
     win._siteMap = siteMap;
