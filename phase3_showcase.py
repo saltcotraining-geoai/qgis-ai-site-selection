@@ -389,7 +389,7 @@ body {{ font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; }
     display: flex; align-items: center; margin-bottom: 10px; gap: 10px;
 }}
 .funnel-bar-wrap {{ flex: 1; height: 28px; background: #f0f2f5; border-radius: 6px; overflow: hidden; position: relative; }}
-.funnel-bar {{ height: 100%; border-radius: 6px; transition: width 0.8s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; }}
+.funnel-bar {{ height: 100%; border-radius: 6px; transition: width 0.8s ease; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; min-width: 14px; }}
 .funnel-bar span {{ font-size: 0.7rem; font-weight: 700; color: white; text-shadow: 0 1px 2px rgba(0,0,0,0.3); }}
 .funnel-label {{ min-width: 200px; font-size: 0.78rem; color: #444; }}
 .funnel-pct {{ min-width: 40px; text-align: right; font-size: 0.75rem; font-weight: 600; color: #888; }}
@@ -545,11 +545,13 @@ $('#sites-table').DataTable({{
 
 var funnelData = {funnel_data};
 var funnelColors = ['#0f3460','#1f78b4','#e31a1c','#33a02c','#6a3d9a','#31a354'];
+var maxCount = funnelData[0].count;
 var funnelHtml = '';
 funnelData.forEach(function(d, i) {{
+    var barPct = Math.max((d.count / maxCount) * 100, 2);
     funnelHtml += '<div class="funnel-step">' +
         '<div class="funnel-label">' + d.label + '</div>' +
-        '<div class="funnel-bar-wrap"><div class="funnel-bar" style="width:' + d.pct + '%;background:' + funnelColors[i] + '"><span>' + d.count + '</span></div></div>' +
+        '<div class="funnel-bar-wrap"><div class="funnel-bar" style="width:' + barPct + '%;background:' + funnelColors[i] + '"><span>' + d.count + '</span></div></div>' +
         '<div class="funnel-pct">' + d.pct + '%</div>' +
         '</div>';
 }});
@@ -632,7 +634,7 @@ function highlightSite(siteId) {{
             layer.off('click');
             layer.on('click', function() {{
                 window.postMessage({{type: 'siteSelect', siteId: this.siteIdx}}, '*');
-            );
+            }});
         }}
     }});
     win._siteMap = siteMap;
