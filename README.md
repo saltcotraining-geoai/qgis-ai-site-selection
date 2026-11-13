@@ -1,6 +1,6 @@
 # Automated Site Selection with QGIS and PyQGIS: Boolean Screening
 
-**Version 1.0.0.** This is the automated version of the site-selection workflow from the course **Applied Spatial Analysis Using QGIS** ([saltco.org blog](https://saltco.org/blog.html) · [YouTube @saltcoTraining](https://www.youtube.com/@saltcoTraining)).
+**Version 1.0.0.** A site-selection workflow in QGIS, automated with PyQGIS. By [SALTCO Training](https://saltco.org) · [YouTube @saltcoTraining](https://www.youtube.com/@saltcoTraining).
 
 The question: *which existing buildings could host a new community facility?* A building is suitable only if it passes **every** rule (Boolean screening):
 
@@ -12,7 +12,7 @@ The question: *which existing buildings could host a new community facility?* A 
 
 The same steps you do by hand in QGIS run here in one command, and every intermediate layer is saved so you can compare it with your own.
 
-🎬 **Video walkthrough:** [Automated site selection with PyQGIS](https://youtu.be/khPESqTPLMu) (recorded with the earlier scripts; see *Changes since the video*).
+🎬 **Video walkthrough:** [QGIS + AI: Automated Site Selection (Full Demo)](https://youtu.be/khPESqTPLMU) (recorded with the earlier scripts; see *Changes since the video*).
 
 Dataset: QGIS Training Manual exercise data (Swellendam, South Africa) · © OpenStreetMap contributors (ODbL).
 
@@ -22,7 +22,7 @@ Dataset: QGIS Training Manual exercise data (Swellendam, South Africa) · © Ope
 
 ## Changes since the video
 
-The scripts shown in the course video ([▶ watch on YouTube](https://youtu.be/khPESqTPLMu)) have been fixed and extended. **The method and the result are the same: 9 suitable buildings.** If you want exactly the files from the video, download the release **"Version shown in the video"** (tag `video-2026`).
+The scripts shown in the video ([▶ watch on YouTube](https://youtu.be/khPESqTPLMU)) have been fixed and extended. **The method and the result are the same: 9 suitable buildings.** If you want exactly the files from the video, download the release **"Version shown in the video"** (tag `video-2026`).
 
 | In the video | Now (v1.0) |
 |---|---|
@@ -109,25 +109,23 @@ To run another town or another set of criteria, copy `config.json`, edit it, the
 
 ## The workflow: GUI tool ↔ script step
 
-Use this table when teaching. Each row is one manual action in QGIS and the matching code in `phase2_site_selection.py`.
+Each row is one manual action in QGIS and the matching code in `phase2_site_selection.py`.
 
-| Step | Rule | Manual QGIS (GUI) | Script (Processing ID) | Course lesson |
-|---|---|---|---|---|
-| 1 | Load data | Layer ▸ Add Layer ▸ Add Vector Layer | `load_vector()` | [Week 1 post](https://saltco.org/blog-week1-field-data-import.html) |
-| 2 | Metric CRS | Choose UTM zone (EPSG:32734 Swellendam; EPSG:32636 Sudan course data) | `choose_analysis_crs()`: `auto` or fixed in config | [Week 2 ▶](https://youtu.be/sCckj50_T30) |
-| 3 | Reproject | Vector ▸ Data Management ▸ Reproject Layer | `native:reprojectlayer` | [Week 2 ▶](https://youtu.be/sCckj50_T30) |
-| 3 | Fix geometries | Processing ▸ Vector geometry ▸ Fix Geometries | `native:fixgeometries` | [Week 3 post](https://saltco.org/blog-week3-cadastral-boundary-mapping-topology.html) |
-| A | Area 800–1,200 m² | Field Calculator `area($geometry)` → Extract by Expression | `native:fieldcalculator`, `native:extractbyexpression` | [Week 4 post](https://saltco.org/blog-week4-attribute-queries-expressions-selection-math.html) |
-| B | ≤ 1,000 m to school | Buffer (✔ Dissolve) → Extract by Location: *intersect* | `native:buffer`, `native:extractbylocation` (0) | [Week 5 ▶](https://youtu.be/DCPlnx9k7J0) |
-| C | > 100 m from main highway | Check the attribute table → Extract by Expression `"highway" IN (...)` → Buffer → Extract by Location: *disjoint* | `main_highways_layer()`, `native:buffer`, `native:extractbylocation` (2) | [Week 5 ▶](https://youtu.be/DCPlnx9k7J0) |
-| D | > 300 m from river | (optional) Extract by Expression on `waterway` → Buffer → Extract by Location: *disjoint* | `river_layer()`, `native:buffer`, `native:extractbylocation` (2) | [Week 5 ▶](https://youtu.be/DCPlnx9k7J0) |
-| E | In urban area | Extract by Location: *intersect* (or *are within*) | `native:extractbylocation` (0 / 6) | [Week 5 ▶](https://youtu.be/DCPlnx9k7J0) |
-| F | Population proxy | Field Calculator `"area_sqm" / 30` | `enrich_candidates()` | [Week 6 ▶](https://youtu.be/gZYzosMKV1I) |
-| F | Rank candidates | Field Calculator (distances, weighted sum) | `enrich_candidates()` | [Week 6 ▶](https://youtu.be/gZYzosMKV1I) |
-| M | Criteria matrix | Field Calculator: distance + pass/fail per criterion for every building | `build_criteria_matrix()` → `criteria_matrix.csv` | [Week 4 post](https://saltco.org/blog-week4-attribute-queries-expressions-selection-math.html) |
-| G | Export | Export ▸ Save Features As… GeoJSON, EPSG:4326 | `save_vector(..., "GeoJSON", wgs84())` | [Week 8 post](https://saltco.org/blog-week8-low-bandwidth-offline-web-maps.html) |
-
-▶ = session recording. Week 6 also covers the raster version of Boolean site selection (Raster Calculator).
+| Step | Rule | Manual QGIS (GUI) | Script (Processing ID) |
+|---|---|---|---|
+| 1 | Load data | Layer ▸ Add Layer ▸ Add Vector Layer | `load_vector()` |
+| 2 | Metric CRS | Choose UTM zone (EPSG:32734 for Swellendam) | `choose_analysis_crs()`: `auto` or fixed in config |
+| 3 | Reproject | Vector ▸ Data Management ▸ Reproject Layer | `native:reprojectlayer` |
+| 3 | Fix geometries | Processing ▸ Vector geometry ▸ Fix Geometries | `native:fixgeometries` |
+| A | Area 800–1,200 m² | Field Calculator `area($geometry)` → Extract by Expression | `native:fieldcalculator`, `native:extractbyexpression` |
+| B | ≤ 1,000 m to school | Buffer (✔ Dissolve) → Extract by Location: *intersect* | `native:buffer`, `native:extractbylocation` (0) |
+| C | > 100 m from main highway | Check the attribute table → Extract by Expression `"highway" IN (...)` → Buffer → Extract by Location: *disjoint* | `main_highways_layer()`, `native:buffer`, `native:extractbylocation` (2) |
+| D | > 300 m from river | (optional) Extract by Expression on `waterway` → Buffer → Extract by Location: *disjoint* | `river_layer()`, `native:buffer`, `native:extractbylocation` (2) |
+| E | In urban area | Extract by Location: *intersect* (or *are within*) | `native:extractbylocation` (0 / 6) |
+| F | Population proxy | Field Calculator `"area_sqm" / 30` | `enrich_candidates()` |
+| F | Rank candidates | Field Calculator (distances, weighted sum) | `enrich_candidates()` |
+| M | Criteria matrix | Field Calculator: distance + pass/fail per criterion for every building | `build_criteria_matrix()` → `criteria_matrix.csv` |
+| G | Export | Export ▸ Save Features As… GeoJSON, EPSG:4326 | `save_vector(..., "GeoJSON", wgs84())` |
 
 Every intermediate layer is saved in `analysis_data/steps/`, so you can open each one next to your own GUI layer and compare them step by step.
 
@@ -147,7 +145,7 @@ All later phases analyse the **prepared** layers. They switch to `prepared/` aut
 | 8 | Fix again, drop empty geometries | Fix Geometries | Clipping can leave GeometryCollections or slivers |
 | 9 | Save `prepared/*.gpkg`, `study_area.gpkg`, `reference_zone.gpkg`, `prepare_summary.json` | – | Before/after counts of features and vertices |
 
-The default study area (`source: extent`, the bounding box of all buildings) keeps the **same 9 sites** while removing far-away roads, rivers and urban polygons. For the Sudan course data, use `source: file` with your digitised study-area polygon, or `source: urban` with a filter such as `"MIN_REGION" = 'SWELLENDAM'`.
+The default study area (`source: extent`, the bounding box of all buildings) keeps the **same 9 sites** while removing far-away roads, rivers and urban polygons. For your own data, use `source: file` with a digitised study-area polygon, or `source: urban` with a filter such as `"MIN_REGION" = 'SWELLENDAM'`.
 
 ### Attribute filters before geometry
 
@@ -196,7 +194,7 @@ GUI equivalent: *Vector ▸ Geometry Tools ▸ Simplify* (Douglas-Peucker, toler
 
 ### Population
 
-- `pop_estimate` = footprint area ÷ 30, the formula taught in class.
+- `pop_estimate` = footprint area ÷ 30, a simple rule of thumb (30 m² per person).
 - `pop_estimate_levels` also multiplies by `building:levels` (1 when the value is missing).
 
 Both are rough proxies, not census figures.
@@ -219,7 +217,7 @@ python3 compare_outputs.py manual=results/manual_qgis.geojson pyqgis=suitable_si
 | Cause | How to make them match |
 |---|---|
 | GUI `$area` is **ellipsoidal**; the script uses planar `area($geometry)` | Use `area($geometry)` in the GUI too |
-| Different CRS | Set `analysis.analysis_crs` to the CRS used in class |
+| Different CRS | Set `analysis.analysis_crs` to the CRS you used in the GUI |
 | Buffer segments / dissolve | 36 segments, ✔ Dissolve result |
 | Predicate (intersects vs. within) | `criteria.urban_relation` |
 | Which road classes count as "main" | `criteria.main_highway_classes` |
