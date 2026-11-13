@@ -1,0 +1,109 @@
+{
+  "_about": "Site-selection settings shared by phase0/phase1/phase2/phase3 (v1.0, Boolean screening). Change values here, not in the Python code. Keys starting with '_' are notes and are ignored.",
+
+  "paths": {
+    "_note": "All paths are relative to the folder that contains this config file.",
+    "dataset_dir": "dataset",
+    "analysis_dir": "analysis_data",
+    "zones_dir": "analysis_zones",
+    "web_assets_dir": "web_assets",
+    "satellite_image": "dataset/satellite_image.tif",
+    "_prepared_note": "Phase 0 writes the prepared (reprojected, fixed, clipped) layers here; the other phases read them automatically.",
+    "prepared_dir": "prepared"
+  },
+
+  "study_area": {
+    "_note": "Phase 0 data preparation. source: 'extent' = bounding box of extent_layer (default: all buildings, keeps results identical to a run without Phase 0); 'urban' = the urban polygons (optionally filtered with urban_filter, a QGIS expression such as \"MIN_REGION\" = 'SWELLENDAM'); 'file' = your own polygon GeoPackage (e.g. digitised in QGIS).",
+    "enabled": true,
+    "source": "extent",
+    "extent_layer": "buildings",
+    "urban_filter": "",
+    "file": "dataset/study_area.gpkg",
+    "aoi_buffer_m": 0,
+    "_reference_note": "Reference layers (schools, roads, rivers, urban, water...) are clipped to the study area PLUS this buffer, so features just outside it still count (edge effect). 'auto' = largest distance used by any rule + 100 m.",
+    "reference_buffer_m": "auto",
+    "_candidate_note": "Candidate layer footprints are SELECTED (Extract by Location), never cut, so their areas stay correct.",
+    "candidate_layer": "buildings",
+    "candidate_relation": "intersects"
+  },
+
+  "layers": {
+    "_note": "Each value is BOTH the GeoPackage file stem and the layer name inside it, e.g. dataset/buildings.gpkg|layername=buildings.",
+    "buildings": "buildings",
+    "schools": "schools",
+    "roads": "roads",
+    "rivers": "rivers",
+    "urban": "urban",
+    "_optional_note": "Shown on the Phase 1 map only.",
+    "water": "water",
+    "restaurants": "restaurants"
+  },
+
+  "fields": {
+    "_note": "Attribute names in the input data. id_candidates is the order used to pick a stable feature ID (for popups and for comparing manual vs. script vs. AI results).",
+    "highway": "highway",
+    "waterway": "waterway",
+    "building_levels": "building:levels",
+    "id_candidates": ["osm_id", "full_id", "fid"]
+  },
+
+  "analysis": {
+    "_note": "analysis_crs: 'auto' picks the local UTM zone from the buildings extent; or give a code such as 'EPSG:32734' to match the CRS you used in the manual QGIS exercise.",
+    "analysis_crs": "auto",
+    "buffer_segments": 36,
+    "verbose_processing": false
+  },
+
+  "criteria": {
+    "_note": "Boolean screening rules (constraints). A building must pass ALL of them.",
+    "min_area_sqm": 800,
+    "max_area_sqm": 1200,
+    "school_distance_m": 1000,
+    "highway_exclusion_m": 100,
+    "main_highway_classes": ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"],
+    "river_exclusion_m": 300,
+    "_river_classes_note": "Attribute filter on rivers.waterway before the buffer (e.g. [\"river\", \"stream\"]). Empty list = every waterway (course baseline). Each run prints the classes found.",
+    "river_classes": [],
+    "_urban_relation_note": "'intersects' keeps buildings touching an urban polygon (original baseline); 'within' requires the whole footprint inside.",
+    "urban_relation": "intersects"
+  },
+
+  "population": {
+    "_note": "pop_estimate = footprint area / sqm_per_person (the baseline taught in class). pop_estimate_levels also multiplies by building:levels (default_levels when missing).",
+    "sqm_per_person": 30,
+    "default_levels": 1
+  },
+
+  "scoring": {
+    "_note": "Ranking of the candidates that passed screening (it never excludes one). Each factor gets a 0-1 score by linear interpolation between 'zero_at_m' (score 0) and 'one_at_m' (score 1). Weights are normalised to sum to 1.",
+    "school":  {"weight": 0.50, "zero_at_m": 1000, "one_at_m": 0},
+    "highway": {"weight": 0.25, "zero_at_m": 100,  "one_at_m": 500},
+    "river":   {"weight": 0.25, "zero_at_m": 300,  "one_at_m": 1000}
+  },
+
+  "performance": {
+    "_note": "Fix geometries always runs. Simplification (Douglas-Peucker) reduces vertices: faster processing, smaller web files. tolerance_m = how far an edge may move.",
+    "simplify_analysis": {
+      "_note": "Applied to the metric analysis copies BEFORE the spatial steps. Distances to these layers can change by up to tolerance_m. Buildings are NOT listed: simplifying footprints changes their area, which is a selection rule.",
+      "enabled": true,
+      "tolerance_m": 1.0,
+      "layers": ["roads", "rivers", "urban"]
+    },
+    "simplify_web": {
+      "_note": "Applied only to the copies drawn on the web maps (zones, roads, rivers, urban...). Never to the analysis or to the result footprints.",
+      "enabled": true,
+      "tolerance_m": 2.0,
+      "exclude": ["buildings"]
+    },
+    "_precision_note": "Decimal places in GeoJSON output: 6 = about 11 cm, 7 = about 1 cm (larger files).",
+    "geojson_precision": 6
+  },
+
+  "web": {
+    "_note": "Basemaps: 'osm' and 'esri_imagery' are allowed for teaching with attribution. satellite_max_px limits the local image overlay size so the HTML stays small.",
+    "basemaps": ["osm", "esri_imagery"],
+    "satellite_max_px": 2048,
+    "satellite_opacity": 0.65,
+    "zoom_start": 15
+  }
+}
