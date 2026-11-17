@@ -91,8 +91,8 @@ def choose_analysis_crs(cfg: dict, layer: QgsVectorLayer):
 
     setting = str(cfg["analysis"].get("analysis_crs", "auto")).strip()
     if setting.lower() == "auto" and not layer.crs().isGeographic() and layer.crs().authid() != "EPSG:3857":
-        # Data already in a projected (metric) CRS - e.g. the Phase 0 output, or course
-        # data already reprojected to UTM 36N in class: keep it, do not switch zones.
+        # Data already in a projected (metric) CRS - e.g. the Phase 0 output, or data you
+        # already reprojected to a UTM zone: keep it, do not switch zones.
         crs = layer.crs()
         return crs, f"{crs.authid()} (auto: the data's own projected CRS)", lon, lat
     if setting.lower() != "auto":

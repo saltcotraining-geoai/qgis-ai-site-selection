@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compare site-selection results from different methods.
 
-Typical use in the course:
+Typical use:
     manual  = the result students produce by hand in QGIS (exported as GeoJSON, WGS 84)
     pyqgis  = suitable_sites.geojson from phase2_site_selection.py
     ai      = the result of the prompt-only AI run (exported as GeoJSON)

@@ -1,6 +1,6 @@
 # Automated Site Selection with QGIS and PyQGIS: Boolean Screening
 
-**Version 1.0.0.** A site-selection workflow in QGIS, automated with PyQGIS. By [SALTCO Training](https://saltco.org) · [YouTube @saltcoTraining](https://www.youtube.com/@saltcoTraining).
+**Version 1.0.1.** A site-selection workflow in QGIS, automated with PyQGIS. By [SALTCO Training](https://saltco.org) · [YouTube @saltcoTraining](https://www.youtube.com/@saltcoTraining).
 
 The question: *which existing buildings could host a new community facility?* A building is suitable only if it passes **every** rule (Boolean screening):
 
@@ -137,10 +137,10 @@ All later phases analyse the **prepared** layers. They switch to `prepared/` aut
 |---|---|---|---|
 | 1 | Find every GeoPackage in `dataset/` | – | Originals are never modified |
 | 2 | Build the study area: building extent, urban polygons (optionally filtered) or your own polygon | Extract Layer Extent / Dissolve | `config.json > study_area.source` |
-| 3 | Choose **one** metric CRS from the study area | – | Local UTM zone. Data that's already projected (e.g. UTM 36N) keeps its CRS. |
+| 3 | Choose **one** metric CRS from the study area | – | Local UTM zone. Data that's already in a projected CRS (e.g. a UTM zone) keeps it. |
 | 4 | Reproject the study area and every layer to it | Reproject Layer | No mixed coordinate systems |
 | 5 | Fix geometries | Fix Geometries | Clip fails on invalid input |
-| 6 | Reference zone = study area + buffer | Buffer | Prevents the **edge effect**: a school just outside the study area still counts. Auto = largest rule distance (1,000 m) + 100 m. |
+| 6 | Reference zone = study area + buffer | Buffer | Prevents the **edge effect**: a school just outside the study area still counts. Fixed at **1,600 m** in every release from v1.0.1 on, so later releases (MCE, v2.0) read the same prepared data: the largest distance any rule measures (the MCE school factor, 1,500 m) + 100 m. Boolean screening alone would need only 1,100 m; the result is the same 9 sites. `"auto"` = largest rule distance + 100 m. Phase 0 warns if the buffer is ever smaller than that. |
 | 7 | Buildings: **select** whole footprints in the study area. Other layers: **clip** to the reference zone. | Extract by Location / Clip | Cutting a footprint would change its area, which is a selection rule |
 | 8 | Fix again, drop empty geometries | Fix Geometries | Clipping can leave GeometryCollections or slivers |
 | 9 | Save `prepared/*.gpkg`, `study_area.gpkg`, `reference_zone.gpkg`, `prepare_summary.json` | – | Before/after counts of features and vertices |

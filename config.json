@@ -20,8 +20,8 @@
     "urban_filter": "",
     "file": "dataset/study_area.gpkg",
     "aoi_buffer_m": 0,
-    "_reference_note": "Reference layers (schools, roads, rivers, urban, water...) are clipped to the study area PLUS this buffer, so features just outside it still count (edge effect). 'auto' = largest distance used by any rule + 100 m.",
-    "reference_buffer_m": "auto",
+    "_reference_note": "Reference layers (schools, roads, rivers, urban, water...) are clipped to the study area PLUS this buffer, so features just outside it still count (edge effect). Fixed at 1600 m in every release from v1.0.1 on, so Boolean (Phase 2) and MCE (Phase 2b, v2.0) read the SAME prepared data: the largest distance any rule measures is the MCE school factor (1500 m) + 100 m margin. 'auto' = largest distance used by any rule + 100 m. Phase 0 warns if this is smaller than the largest rule distance.",
+    "reference_buffer_m": 1600,
     "_candidate_note": "Candidate layer footprints are SELECTED (Extract by Location), never cut, so their areas stay correct.",
     "candidate_layer": "buildings",
     "candidate_relation": "intersects"
@@ -62,7 +62,7 @@
     "highway_exclusion_m": 100,
     "main_highway_classes": ["motorway", "motorway_link", "trunk", "trunk_link", "primary", "primary_link"],
     "river_exclusion_m": 300,
-    "_river_classes_note": "Attribute filter on rivers.waterway before the buffer (e.g. [\"river\", \"stream\"]). Empty list = every waterway (course baseline). Each run prints the classes found.",
+    "_river_classes_note": "Attribute filter on rivers.waterway before the buffer (e.g. [\"river\", \"stream\"]). Empty list = every waterway (the baseline that gives the standard 9 sites). Each run prints the classes found.",
     "river_classes": [],
     "_urban_relation_note": "'intersects' keeps buildings touching an urban polygon (original baseline); 'within' requires the whole footprint inside.",
     "urban_relation": "intersects"
