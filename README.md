@@ -1,6 +1,6 @@
-# Automated Site Selection with QGIS and PyQGIS: Boolean Screening
+# Automated Site Selection with QGIS and PyQGIS: Boolean Screening and Multi-Criteria Evaluation
 
-**Version 1.0.1.** A site-selection workflow in QGIS, automated with PyQGIS. By [SALTCO Training](https://saltco.org) · [YouTube @saltcoTraining](https://www.youtube.com/@saltcoTraining).
+**Version 2.0.0.** A site-selection workflow in QGIS, automated with PyQGIS. By [SALTCO Training](https://saltco.org) · [YouTube @saltcoTraining](https://www.youtube.com/@saltcoTraining).
 
 The question: *which existing buildings could host a new community facility?* A building is suitable only if it passes **every** rule (Boolean screening):
 
@@ -11,6 +11,8 @@ The question: *which existing buildings could host a new community facility?* A 
 5. in the mapped urban area
 
 The same steps you do by hand in QGIS run here in one command, and every intermediate layer is saved so you can compare it with your own.
+
+**New in v2.0: multi-criteria evaluation (MCE).** Same data, same rules, but a more nuanced decision: true limits stay yes/no **constraints**, preferences become weighted 0–1 **factors** (AHP weights), with a **sensitivity check** and a **side-by-side comparison** with the Boolean result. See *Phase 2b* below.
 
 🎬 **Video walkthrough:** [QGIS + AI: Automated Site Selection (Full Demo)](https://youtu.be/khPESqTPLMU) (recorded with the earlier scripts; see *Changes since the video*).
 
@@ -24,7 +26,7 @@ Dataset: QGIS Training Manual exercise data (Swellendam, South Africa) · © Ope
 
 The scripts shown in the video ([▶ watch on YouTube](https://youtu.be/khPESqTPLMU)) have been fixed and extended. **The method and the result are the same: 9 suitable buildings.** If you want exactly the files from the video, download the release **"Version shown in the video"** (tag `video-2026`).
 
-| In the video | Now (v1.0) |
+| In the video | Now (v1.0 onwards) |
 |---|---|
 | Criteria written inside the scripts | All criteria in **`config.json`**; edit that file, not the code |
 | Starts with Phase 1 | **Phase 0** prepares the data first: study area → one metric CRS → reproject → fix → clip |
@@ -48,9 +50,11 @@ The full list of fixes is at the end of this file.
 | `phase0_prepare_data.py` | yes | **Run first.** Study area → one metric CRS → reproject → fix → clip, written to `prepared/` |
 | `phase1_webmap.py` | yes | Explore the input data on an interactive web map |
 | `phase2_site_selection.py` | yes | **The analysis:** Boolean screening (Steps 1–3, A–F), criteria matrix (M), export (G) |
-| `phase3_showcase.py` | no | Dashboard: map + sortable, filterable table + CSV/GeoJSON export |
+| `phase2b_mce.py` | yes | **Multi-criteria evaluation** on the same data: constraints + weighted factors (AHP), sensitivity, comparison with Boolean |
+| `mce_core.py` | no | MCE maths: AHP weights + consistency ratio, sensitivity, Boolean-vs-MCE labels |
+| `phase3_showcase.py` | no | Dashboard: Boolean and MCE results side by side: map + sortable, filterable tables + CSV/GeoJSON export |
 | `compare_outputs.py` | no | Compare your manual QGIS result with the script's result |
-| `demo.py` | yes | Runs Phase 0 → 1 → 2 → 3 in one command, stops on errors, checks the output |
+| `demo.py` | yes | Runs Phase 0 → 1 → 2 → 2b → 3 in one command, stops on errors, checks the output |
 
 Expected input layout:
 
@@ -59,7 +63,7 @@ site_selection/
 ├── config.json  *.py
 └── dataset/
     ├── buildings.gpkg  schools.gpkg  roads.gpkg  rivers.gpkg  urban.gpkg
-    ├── water.gpkg  restaurants.gpkg          (Phase 1 map only)
+    ├── water.gpkg  restaurants.gpkg          (Phase 1 map; optional criteria in Phase 2b)
     └── satellite_image.tif                   (Phase 1 only, optional)
 ```
 
@@ -89,15 +93,17 @@ Run the phases in order:
 python3 phase0_prepare_data.py      # 0. data preparation: study area, CRS, fix, clip
 python3 phase1_webmap.py            # 1. optional: data exploration map
 python3 phase2_site_selection.py    # 2. analysis: Boolean screening + criteria matrix
-python3 phase3_showcase.py          # 3. dashboard
+python3 phase2b_mce.py              # 2b. analysis: multi-criteria evaluation (after Phase 2, for the comparison)
+python3 phase3_showcase.py          # 3. dashboard (shows both methods)
 ```
 
 Or run everything at once:
 
 ```bash
-python3 demo.py                 # Phase 0 -> 1 -> 2 -> 3 (press Enter to start)
+python3 demo.py                 # Phase 0 -> 1 -> 2 -> 2b -> 3 (press Enter to start)
 python3 demo.py --no-pause      # start immediately
 python3 demo.py --skip-phase1   # analysis + dashboard only
+python3 demo.py --skip-mce      # Boolean only, as in v1.0
 python3 demo.py --no-browser    # don't open the dashboard at the end
 ```
 
@@ -192,6 +198,107 @@ Phase 2 checks that `pass_all` reproduces the Boolean result exactly (`identical
 
 GUI equivalent: *Vector ▸ Geometry Tools ▸ Simplify* (Douglas-Peucker, tolerance in metres on a UTM layer), then *Fix Geometries* again.
 
+### Phase 2b: Multi-criteria evaluation (MCE)
+
+Phase 2b uses the same inputs, the same loading, reprojection, geometry fixing and saving as Phase 2. It even imports Phase 2's functions, so the two methods differ **only** in the decision rule.
+
+| | Phase 2: Boolean screening | Phase 2b: MCE (weighted linear combination) |
+|---|---|---|
+| Criteria | every rule is a yes/no veto | true limits = **constraints** (0/1); preferences = **factors** (0–1) |
+| Importance | all rules equal | factors **weighted** (AHP or direct) |
+| Trade-offs | none: one miss = excluded | a strong factor can **compensate** a weak one |
+| Result | an unranked set | a **score and rank for every eligible building** |
+| Robustness check | none | **sensitivity**: weights ±20 % |
+
+```
+suitability = (Σ weightᵢ × factorᵢ) × Π constraintⱼ
+```
+
+| Step | What | Manual QGIS (GUI) | Script |
+|---|---|---|---|
+| 1–3 | Load, reproject, fix, save | same as Phase 2 | same functions as Phase 2 |
+| C1 | Constraint: area 800–1,200 m² | Field Calculator + Extract by Expression | `native:fieldcalculator`, `native:extractbyexpression` |
+| C2 | Constraint: in urban area | Extract by Location (intersect) | `native:extractbylocation` |
+| C3 | Constraint: river setback 100 m (flood safety) | Buffer + Extract by Location (disjoint) | `native:buffer`, `native:extractbylocation` |
+| C4 | Constraint: highway setback 25 m | Buffer + Extract by Location (disjoint) | same |
+| C5 | *Optional* constraint: water-body setback (`mce.constraints.water_setback.enabled`) | Buffer `water` + Extract by Location (disjoint) | same |
+| S+ | *Optional* factor: near restaurants (`mce.factors.restaurant.enabled`) | Field Calculator distance → 0–1, added to the weighted sum | `add_optional_factor()` |
+| W | Weights | AHP in a spreadsheet: pairwise matrix → eigenvector → CR | `mce_core.ahp_weights()` |
+| S | Standardise + combine | Field Calculator: distance → 0–1 → weighted sum | `enrich_candidates()` (shared with Phase 2) |
+| R | Rank + select | Sort by score, Extract by Expression `"mce_rank" <= N` | `native:extractbyexpression` |
+| T | Sensitivity | Re-run with changed weights | `mce_core.sensitivity()` |
+| V | Compare with Boolean | Join by `osm_id`, compare | `mce_core.compare_with_boolean()` |
+
+Factor scales (`config.json > mce > factors`; linear membership, 0 at `zero_at_m`, 1 at `one_at_m`):
+
+- school: 1 at 0 m, 0 at **1,500 m**. This is wider than the Boolean 1,000 m cut-off, so near-misses get a score instead of being dropped.
+- highway: 0 at the 25 m setback, 1 at 500 m.
+- river: 0 at the 100 m setback, 1 at 1,000 m.
+
+Default AHP judgements: school is 3× as important as highway and 3× as important as river; highway and river are equal. This gives weights **0.60 / 0.20 / 0.20** with CR = 0.00. All of these values are **teaching defaults** to agree on with your class.
+
+**Selection.** By default (`match_boolean`), MCE selects the same number of sites as the Boolean result, so the comparison is like for like. The alternatives are `top_n` and `min_score`.
+
+**Outputs:**
+
+- `mce_scored_buildings.geojson`: every eligible building with its factor scores, MCE score and rank.
+- `suitable_sites_mce.geojson`: the selected sites, with `stability` (0–1), `agreement` and `reason`.
+- `mce_vs_boolean.geojson`: both methods' sites in one layer, each labelled:
+  - `both`: selected by both methods (**the strongest candidates**)
+  - `mce_only`: the `reason` says which Boolean rule it narrowly failed (for example "school 1,060 m > 1000 m")
+  - `boolean_only`: the `reason` gives its MCE rank and score
+- `mce_summary.json`: weights, AHP matrix, CR, counts, sensitivity scenarios and agreement.
+- `phase2b_mce.html`: buildings coloured by MCE score.
+
+**Three ways students can use the results:**
+
+1. **Boolean only**: simple and transparent; good when every rule is a real regulation.
+2. **MCE only**: ranked, with trade-offs; good when the criteria are preferences.
+3. **Combined**:
+   - the **consensus set** (`agreement = both`)
+   - Boolean screening with the MCE score as the ranking (that is the Phase 2 `suit_score`)
+   - or MCE constraints = the Boolean rules that are true regulations, with everything else as factors
+
+**Discussion questions:**
+
+- Which Boolean rules are real limits and which are preferences?
+- Why did a `mce_only` site fail the Boolean screen? Is 60 m too close to call a "fail"?
+- Change one AHP judgement to 5 or 1/5. What happens to the CR and to the selected sites?
+- Which sites have a stability below 1.0? Would you recommend them?
+
+### Try it: add a criterion (optional exercises)
+
+Two extra criteria are built in but **switched off** by default, so the standard results (22 eligible buildings, weights 0.60 / 0.20 / 0.20, 6 both / 3 MCE only / 3 Boolean only) don't change. Both layers are already in `dataset/` (`water.gpkg`, `restaurants.gpkg`). Use them after you have a baseline run to compare against.
+
+**Before you start:** copy the baseline outputs (`mce_summary.json`, `suitable_sites_mce.geojson`, `mce_vs_boolean.geojson`) into a folder such as `baseline/`, so you can compare before and after. Change one setting at a time.
+
+**Exercise 1: a new constraint (water-body setback, C5)**
+
+1. In `config.json`, set `mce.constraints.water_setback.enabled` to `true` (default distance 50 m from any dam, reservoir or pond).
+2. Re-run `python3 phase2b_mce.py`, then `python3 phase3_showcase.py`.
+3. Questions:
+   - How many buildings still pass the constraints? Did any previously selected site drop out?
+   - Is a 50 m setback from standing water a **regulation** (a constraint) or a **preference** (a factor)? What would change if you modelled it as a factor instead?
+   - The Boolean screen doesn't use water at all. Is the Boolean-vs-MCE comparison still like for like?
+
+GUI equivalent: Buffer `water` by 50 m (✔ Dissolve) → Extract by Location: *disjoint*.
+
+**Exercise 2: a new factor (closeness to restaurants and amenities)**
+
+1. In `config.json`, set `mce.factors.restaurant.enabled` to `true` (score 1 at 0 m, 0 at 1,500 m).
+2. It joins the weights automatically. With `method: "ahp"` the pairs `school/restaurant`, `highway/restaurant` and `river/restaurant` are used; with `method: "direct"`, the `restaurant` weight is used (then all weights are normalised).
+3. Re-run `python3 phase2b_mce.py`, then `python3 phase3_showcase.py`.
+4. Questions:
+   - What are the new weights and the CR in `mce_summary.json`? Did adding a fourth factor keep the matrix consistent (CR < 0.10)?
+   - Which sites changed rank? Did the agreement with Boolean (both / MCE only / Boolean only) change?
+   - Which sites have a lower stability now? Is a site that wins only because of restaurants a good recommendation for this use?
+
+GUI equivalent: Field Calculator `distance` to the nearest restaurant → 0–1 score → add it to the weighted sum.
+
+**Good to know:**
+- Each run writes over the previous outputs, which is why you save the baseline first. To go back, set `enabled` to `false` again and re-run.
+- If you widen any factor beyond 1,500 m (for example the restaurant `zero_at_m`), the 1,600 m edge buffer is no longer large enough. Phase 0 will warn you. Raise `study_area.reference_buffer_m` to the new distance + 100 m and re-run Phase 0 first.
+
 ### Population
 
 - `pop_estimate` = footprint area ÷ 30, a simple rule of thumb (30 m² per person).
@@ -262,9 +369,9 @@ The comparison is itself a lesson: each difference points to a decision that was
 
 ---
 
-## Coming next: v2.0
+## Coming next: v2.1 (for experienced analysts)
 
-**Multi-criteria evaluation (MCE):** constraints plus weighted factors (AHP), sensitivity analysis, and a side-by-side comparison with this Boolean result. A blog post and a recording will follow on [saltco.org](https://saltco.org/blog.html).
+**Can AI do the GIS?** The same analysis, done three ways with an AI model, each scored against this workflow's criteria matrix. A separate release, video and blog post on [saltco.org](https://saltco.org/blog.html).
 
 ## Data and licence
 

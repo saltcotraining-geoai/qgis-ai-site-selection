@@ -51,7 +51,7 @@ DEFAULT_MARGIN_M = 100.0
 
 
 def largest_rule_distance(cfg: dict) -> float:
-    """Largest distance (m) used by ANY rule or score - the minimum safe reference buffer."""
+    """Largest distance (m) used by ANY rule in Phase 2 or 2b - the minimum safe reference buffer."""
     values = [float(v) for k, v in cfg.get("criteria", {}).items()
               if k.endswith("_m") and isinstance(v, (int, float))]
     for section in (cfg.get("scoring", {}), cfg.get("mce", {}).get("factors", {})):

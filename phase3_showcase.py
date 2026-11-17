@@ -29,6 +29,10 @@ from site_common import existing_fields, normalize_for_leaflet, geojson_property
 
 DEFAULT_STYLE = {"color": "#006837", "weight": 2, "fillColor": "#31a354", "fillOpacity": 0.75}
 SELECTED_STYLE = {"color": "#fdff00", "weight": 6, "fillColor": "#ffd700", "fillOpacity": 0.9}
+# MCE sites are drawn as a dashed outline (no fill) so clicks reach the Boolean sites below.
+MCE_STYLE = {"color": "#7b3294", "weight": 3, "fill": False, "dashArray": "6 4"}
+MCE_SELECTED_STYLE = {"color": "#fdff00", "weight": 6, "fill": True, "fillColor": "#ffd700", "fillOpacity": 0.6, "dashArray": None}
+DEFAULT_CREDIT = {"text": "Prepared by Sallah · SALTCO Training", "url": "https://saltco.org", "url_label": "saltco.org"}
 
 
 def esc(value) -> str:
@@ -109,7 +113,7 @@ def build_mce_html(mce: dict | None) -> tuple[str, str]:
         tds = "".join(f'<td data-sort="{esc(srt) if srt is not None else esc(v)}">{esc(v)}</td>' for v, srt in cells)
         tds = tds.replace(f">{esc(agree_label)}<", f'><span class="dot" style="background:{color}"></span>{esc(agree_label)}<', 1)
         rows.append(
-            f'<tr data-lat="{esc(p.get("lat"))}" data-lon="{esc(p.get("lon"))}" '
+            f'<tr data-mce-id="{esc(p.get("source_id"))}" data-lat="{esc(p.get("lat"))}" data-lon="{esc(p.get("lon"))}" '
             f'data-label="MCE rank {esc(p.get("mce_rank"))} · {esc(label)}">{tds}</tr>'
         )
     section = f"""
@@ -118,6 +122,7 @@ def build_mce_html(mce: dict | None) -> tuple[str, str]:
     <div class="table-tools">
       <h3 style="margin:0">MCE ranked sites (weighted linear combination)</h3>
       <input id="mce-filter" type="search" placeholder="Search…">
+      <button class="btn reset" type="button" onclick="clearSelection()">Reset selection</button>
       <small id="mce-count"></small>
     </div>
     <div class="table-wrap">
@@ -260,6 +265,7 @@ def main() -> int:
 
     # NEW: Phase 2b (MCE) results, shown next to the Boolean result when present.
     mce = load_mce(root)
+    mce_layer = None
     if mce:
         print("[STEP 2b] Adding the MCE results and the Boolean-vs-MCE comparison")
         if mce["comparison"] and mce["comparison"].get("features"):
@@ -275,11 +281,12 @@ def main() -> int:
             ).add_to(m)
         if mce["selected"].get("features"):
             # outline only, no fill: clicks inside still reach the Boolean sites below
-            folium.GeoJson(
+            mce_layer = folium.GeoJson(
                 mce["selected"],
                 name="MCE selected sites (outline)",
-                style_function=lambda f: {"color": "#7b3294", "weight": 3, "fill": False, "dashArray": "6 4"},
-            ).add_to(m)
+                style_function=lambda f: dict(MCE_STYLE),
+            )
+            mce_layer.add_to(m)
 
     plugins.Fullscreen().add_to(m)
     plugins.MousePosition().add_to(m)
@@ -304,6 +311,8 @@ def main() -> int:
     )
     map_name = m.get_name()
     sites_layer_name = sites_layer.get_name() if sites_layer is not None else ""
+    mce_layer_name = mce_layer.get_name() if mce_layer is not None else ""
+    credit = {**DEFAULT_CREDIT, **(cfg.get("web", {}).get("credit") or {})}
 
     # ------------------------------------------------------------------ STEP 3
     print("[STEP 3] Building the table and the funnel")
@@ -390,8 +399,15 @@ def main() -> int:
         geojson_json=script_json(sites_gj),
         map_name=script_json(map_name),
         layer_name=script_json(sites_layer_name),
+        mce_layer_name=script_json(mce_layer_name),
         default_style=script_json(DEFAULT_STYLE),
         selected_style=script_json(SELECTED_STYLE),
+        mce_style=script_json(MCE_STYLE),
+        mce_selected_style=script_json(MCE_SELECTED_STYLE),
+        credit_text=esc(credit.get("text")),
+        credit_url=esc(credit.get("url")),
+        credit_label=esc(credit.get("url_label") or credit.get("url")),
+        credit_json=script_json(credit),
     )
     output_html = root / "phase3_dashboard.html"
     output_html.write_text(page, encoding="utf-8")  # FIX: explicit UTF-8 (Windows default is cp1252)
@@ -452,6 +468,9 @@ body {{ font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; b
 .buttons {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }}
 .btn {{ padding: .65rem .8rem; border: 0; border-radius: 8px; font-size: .8rem; font-weight: 600; cursor: pointer; color: #fff; }}
 .btn.csv {{ background: #1f78b4; }} .btn.geojson {{ background: #33a02c; }} .btn.print {{ background: #6a3d9a; }}
+.btn.reset {{ background: #fff; color: #b45309; border: 1px solid #f0b54a; padding: .4rem .8rem; font-size: .76rem; }}
+.btn.reset:hover {{ background: #fff7e6; }}
+.map-head {{ display: flex; align-items: center; gap: .8rem; flex-wrap: wrap; }} .map-head .sel-count {{ margin-left: auto; color: #b45309; font-weight: 600; }}
 .table-section {{ padding: 0 2.5rem 2rem; max-width: 1600px; margin: 0 auto; }}
 .table-tools {{ display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: .8rem; flex-wrap: wrap; }}
 .table-tools input {{ border: 1px solid #ccc; border-radius: 6px; padding: 6px 10px; font-size: .85rem; min-width: 240px; }}
@@ -471,9 +490,11 @@ tbody tr.selected {{ background: #fff3cd !important; outline: 2px solid #ffc107;
 .dot {{ width: 9px; height: 9px; border-radius: 50%; display: inline-block; margin-right: 6px; }}
 .footer {{ text-align: center; padding: 1.4rem; font-size: .74rem; color: #888; border-top: 1px solid #eee; }}
 .footer a {{ color: #888; }}
+.credit {{ margin-top: .7rem; font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: .92rem; color: #0f766e; letter-spacing: .2px; }}
+.credit a {{ color: #0f766e; font-weight: 700; text-decoration: none; border-bottom: 1px dotted #0f766e; }}
 @media print {{
   body {{ background: #fff; }} .header, .stat, .funnel-bar {{ -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
-  .buttons, .table-tools input {{ display: none; }} .table-wrap {{ max-height: none; overflow: visible; }}
+  .buttons, .table-tools input, .btn.reset {{ display: none; }} .table-wrap {{ max-height: none; overflow: visible; }}
   .side {{ break-inside: avoid; }}
 }}
 </style>
@@ -505,7 +526,9 @@ tbody tr.selected {{ background: #fff3cd !important; outline: 2px solid #ffc107;
 
 <div class="main">
   <div class="card map-card">
-    <div class="map-head">Spatial analysis map <small>Click a site or a table row · toggle layers top-right</small></div>
+    <div class="map-head">Spatial analysis map <small>Click a site or a table row · Ctrl/⌘-click to add more · Esc to reset · toggle layers top-right</small>
+      <small id="selection-count" class="sel-count"></small>
+      <button class="btn reset" type="button" onclick="clearSelection()">Reset selection</button></div>
     <iframe id="site-map" title="Site selection map" srcdoc="{srcdoc}"></iframe>
   </div>
   <div class="side">
@@ -528,6 +551,7 @@ tbody tr.selected {{ background: #fff3cd !important; outline: 2px solid #ffc107;
     <div class="table-tools">
       <h3 style="margin:0">Suitable sites register (ranked)</h3>
       <input id="table-filter" type="search" placeholder="Search name, street, type…">
+      <button class="btn reset" type="button" onclick="clearSelection()">Reset selection</button>
       <small id="table-count"></small>
     </div>
     <div class="table-wrap">
@@ -554,6 +578,7 @@ tbody tr.selected {{ background: #fff3cd !important; outline: 2px solid #ffc107;
   Generated {generated} from Phase 2 PyQGIS results · Folium/Leaflet<br>
   Dataset: <a href="https://docs.qgis.org/latest/en/docs/training_manual/" target="_blank" rel="noopener">QGIS Training Manual</a>
   exercise data · &copy; <a href="https://openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> (ODbL)
+  <div class="credit">{credit_text} · <a href="{credit_url}" target="_blank" rel="noopener">{credit_label}</a></div>
 </div>
 
 <script>
@@ -564,11 +589,18 @@ var MAP_NAME = {map_name};          // folium variable name of the L.Map inside 
 var LAYER_NAME = {layer_name};      // folium variable name of the sites L.GeoJSON layer
 var DEFAULT_STYLE = {default_style};
 var SELECTED_STYLE = {selected_style};
+var MCE_LAYER_NAME = {mce_layer_name};  // folium variable name of the MCE outline layer ('' if no MCE)
+var MCE_STYLE = {mce_style};
+var MCE_SELECTED_STYLE = {mce_selected_style};
+var CREDIT = {credit_json};
 
 var siteById = {{}};
 SITES.forEach(function (s) {{ siteById[s.id] = s; }});
 var siteLayers = {{}};   // site id -> Leaflet polygon
-var leafletMap = null, leafletL = null, selectedId = null;
+var leafletMap = null, leafletL = null;
+var mceLayers = {{}};      // building source_id -> Leaflet MCE outline
+var selected = [];        // building IDs (source_id) currently selected, in click order
+var homeView = null;
 
 function escapeHtml(v) {{
   return String(v === null || v === undefined ? '' : v)
@@ -589,6 +621,7 @@ function connectMap(attempt) {{
     if (attempt < 50) setTimeout(function () {{ connectMap(attempt + 1); }}, 200);
     return;
   }}
+  if (leafletMap) return;   // already connected (this runs on page load AND on the iframe's load event)
   leafletMap = win[MAP_NAME];
   leafletL = win.L;
   // FIX: Leaflet measured its container before the dashboard finished its
@@ -596,13 +629,26 @@ function connectMap(attempt) {{
   // short delay, and whenever the window size changes.
   fitMapToFrame();
   setTimeout(fitMapToFrame, 300);
+  homeView = {{ center: leafletMap.getCenter(), zoom: leafletMap.getZoom() }};
+  if (leafletMap.attributionControl && CREDIT && CREDIT.text) {{
+    leafletMap.attributionControl.addAttribution(escapeHtml(CREDIT.text) + (CREDIT.url ? ' · <a href="' + escapeHtml(CREDIT.url) + '" target="_blank" rel="noopener">' + escapeHtml(CREDIT.url_label || CREDIT.url) + '</a>' : ''));
+  }}
+  if (MCE_LAYER_NAME && win[MCE_LAYER_NAME]) {{
+    win[MCE_LAYER_NAME].eachLayer(function (layer) {{
+      var p = layer.feature && layer.feature.properties;
+      if (!p || p.source_id === undefined || p.source_id === null) return;
+      var key = String(p.source_id);
+      mceLayers[key] = layer;
+      layer.on('click', function (e) {{ selectKey(key, 'map', isAdditive(e && e.originalEvent)); }});
+    }});
+  }}
   if (!LAYER_NAME) return;
   win[LAYER_NAME].eachLayer(function (layer) {{
     var p = layer.feature && layer.feature.properties;
     if (!p || p.site_id === undefined || p.site_id === null) return;
     var id = Number(p.site_id);
     siteLayers[id] = layer;
-    layer.on('click', function () {{ selectSite(id, 'map'); }});
+    layer.on('click', function (e) {{ selectKey(keyOfSite(id), 'map', isAdditive(e && e.originalEvent)); }});
   }});
 }}
 
@@ -611,31 +657,105 @@ function fitMapToFrame() {{
 }}
 window.addEventListener('resize', fitMapToFrame);
 
-function selectSite(id, source) {{
-  if (selectedId !== null && siteLayers[selectedId]) siteLayers[selectedId].setStyle(DEFAULT_STYLE);
-  Array.prototype.forEach.call(document.querySelectorAll('#sites-table tbody tr.selected'),
-    function (r) {{ r.classList.remove('selected'); }});
-  selectedId = id;
+// ---------------------------------------------------------------- one selection for map + both tables
+// A building is identified by its source_id (osm_id/full_id), the ID shared by
+// the Boolean table, the MCE table and both map layers. Selecting a building
+// highlights it in BOTH map layers and marks its row in BOTH tables (a "both"
+// site appears in each). Click = select one; Ctrl/Cmd-click = add or remove;
+// Reset selection (or Esc) clears everything.
+function keyOfSite(id) {{
+  var s = siteById[id];
+  return s && s.source_id !== undefined && s.source_id !== null && s.source_id !== '' ? String(s.source_id) : 'site:' + id;
+}}
+var siteIdByKey = {{}};
+SITES.forEach(function (s) {{ siteIdByKey[keyOfSite(s.id)] = s.id; }});
 
-  var row = document.querySelector('#sites-table tbody tr[data-site-id="' + id + '"]');
-  if (row) {{
-    row.classList.add('selected');
-    if (source === 'map') row.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+function isAdditive(ev) {{ return !!(ev && (ev.ctrlKey || ev.metaKey)); }}
+
+function cssKey(k) {{ return window.CSS && CSS.escape ? CSS.escape(k) : String(k).replace(/"/g, '\\"'); }}
+
+function rowsForKey(key) {{
+  var rows = [];
+  var id = siteIdByKey[key];
+  if (id !== undefined) {{
+    var r = document.querySelector('#sites-table tbody tr[data-site-id="' + id + '"]');
+    if (r) rows.push(r);
   }}
-  var layer = siteLayers[id];
-  if (!layer) return;
-  layer.setStyle(SELECTED_STYLE);
-  layer.bringToFront();
-  if (source === 'table' && leafletMap) {{
-    leafletMap.fitBounds(layer.getBounds(), {{ maxZoom: 18, padding: [40, 40] }});
-    var s = siteById[id];
-    if (s && leafletL) {{
-      leafletL.popup()
-        .setLatLng([s.lat, s.lon])
-        .setContent('<b>Rank ' + s.rank + '</b> · score ' + s.score + '<br>' +
-                    escapeHtml(s.name || s.source_id) + '<br>' + s.area + ' m² · pop. ' + s.pop)
-        .openOn(leafletMap);
+  var m = document.querySelector('#mce-table tbody tr[data-mce-id="' + cssKey(key) + '"]');
+  if (m) rows.push(m);
+  return rows;
+}}
+
+function applySelection() {{
+  Object.keys(siteLayers).forEach(function (id) {{ siteLayers[id].setStyle(DEFAULT_STYLE); }});
+  Object.keys(mceLayers).forEach(function (k) {{ mceLayers[k].setStyle(MCE_STYLE); }});
+  Array.prototype.forEach.call(document.querySelectorAll('#sites-table tbody tr.selected, #mce-table tbody tr.selected'),
+    function (r) {{ r.classList.remove('selected'); }});
+  selected.forEach(function (key) {{
+    var id = siteIdByKey[key];
+    if (id !== undefined && siteLayers[id]) {{ siteLayers[id].setStyle(SELECTED_STYLE); siteLayers[id].bringToFront(); }}
+    if (mceLayers[key]) {{ mceLayers[key].setStyle(MCE_SELECTED_STYLE); mceLayers[key].bringToFront(); }}
+    rowsForKey(key).forEach(function (r) {{ r.classList.add('selected'); }});
+  }});
+  var info = document.getElementById('selection-count');
+  if (info) info.textContent = selected.length ? selected.length + ' selected' : '';
+}}
+
+function popupText(key, mceRow) {{
+  var id = siteIdByKey[key], s = id !== undefined ? siteById[id] : null;
+  var parts = [];
+  if (s) parts.push('<b>Boolean rank ' + s.rank + '</b> · score ' + s.score + '<br>' +
+                    escapeHtml(s.name || s.source_id) + '<br>' + s.area + ' m² · pop. ' + s.pop);
+  if (mceRow) parts.push('<b>' + escapeHtml(mceRow.getAttribute('data-label')) + '</b>');
+  return parts.join('<br>');
+}}
+
+function selectKey(key, source, additive) {{
+  var i = selected.indexOf(key);
+  if (additive) {{
+    if (i >= 0) selected.splice(i, 1); else selected.push(key);
+  }} else {{
+    selected = [key];
+  }}
+  applySelection();
+  var stillSelected = selected.indexOf(key) >= 0;
+  var rows = rowsForKey(key);
+  if (source === 'map' && stillSelected && rows.length) rows[0].scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+  if (!leafletMap || !stillSelected) return;
+  var id = siteIdByKey[key];
+  var layer = (id !== undefined && siteLayers[id]) || mceLayers[key];
+  var mceRow = document.querySelector('#mce-table tbody tr[data-mce-id="' + cssKey(key) + '"]');
+  var s = id !== undefined ? siteById[id] : null;
+  var lat = s ? s.lat : (mceRow ? parseFloat(mceRow.getAttribute('data-lat')) : NaN);
+  var lon = s ? s.lon : (mceRow ? parseFloat(mceRow.getAttribute('data-lon')) : NaN);
+  if (source === 'table') {{
+    if (additive && selected.length > 1 && leafletL) {{
+      // several sites: zoom to show all of them
+      var b = null;
+      selected.forEach(function (k) {{
+        var sid = siteIdByKey[k], l = (sid !== undefined && siteLayers[sid]) || mceLayers[k];
+        if (l && l.getBounds) b = b ? b.extend(l.getBounds()) : leafletL.latLngBounds(l.getBounds().getSouthWest(), l.getBounds().getNorthEast());
+      }});
+      if (b) leafletMap.fitBounds(b, {{ maxZoom: 18, padding: [40, 40] }});
+    }} else if (layer && layer.getBounds) {{
+      leafletMap.fitBounds(layer.getBounds(), {{ maxZoom: 18, padding: [40, 40] }});
+    }} else if (!isNaN(lat) && !isNaN(lon)) {{
+      leafletMap.setView([lat, lon], 18);
     }}
+  }}
+  if (leafletL && !isNaN(lat) && !isNaN(lon)) {{
+    leafletL.popup().setLatLng([lat, lon]).setContent(popupText(key, mceRow)).openOn(leafletMap);
+  }}
+}}
+
+// Reset: clear the highlight on the map and in both tables, close the popup,
+// and go back to the starting view.
+function clearSelection() {{
+  selected = [];
+  applySelection();
+  if (leafletMap) {{
+    leafletMap.closePopup();
+    if (homeView) leafletMap.setView(homeView.center, homeView.zoom);
   }}
 }}
 
@@ -644,24 +764,16 @@ connectMap(0);
 
 document.querySelector('#sites-table tbody').addEventListener('click', function (e) {{
   var tr = e.target.closest('tr[data-site-id]');
-  if (tr) selectSite(Number(tr.getAttribute('data-site-id')), 'table');
+  if (tr) selectKey(keyOfSite(Number(tr.getAttribute('data-site-id'))), 'table', isAdditive(e));
 }});
-
-// MCE table: a row click zooms to the site and opens a small popup
 var mceBody = document.querySelector('#mce-table tbody');
 if (mceBody) {{
   mceBody.addEventListener('click', function (e) {{
-    var tr = e.target.closest('tr[data-lat]');
-    if (!tr) return;
-    Array.prototype.forEach.call(mceBody.querySelectorAll('tr.selected'), function (r) {{ r.classList.remove('selected'); }});
-    tr.classList.add('selected');
-    var lat = parseFloat(tr.getAttribute('data-lat')), lon = parseFloat(tr.getAttribute('data-lon'));
-    if (leafletMap && leafletL && !isNaN(lat) && !isNaN(lon)) {{
-      leafletMap.setView([lat, lon], 18);
-      leafletL.popup().setLatLng([lat, lon]).setContent(escapeHtml(tr.getAttribute('data-label'))).openOn(leafletMap);
-    }}
+    var tr = e.target.closest('tr[data-mce-id]');
+    if (tr) selectKey(tr.getAttribute('data-mce-id'), 'table', isAdditive(e));
   }});
 }}
+document.addEventListener('keydown', function (e) {{ if (e.key === 'Escape') clearSelection(); }});
 
 // ---------------------------------------------------------------- search + sort (no jQuery)
 // One function, used for both tables (Boolean and MCE).

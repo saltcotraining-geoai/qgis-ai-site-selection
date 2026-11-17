@@ -1,5 +1,5 @@
 {
-  "_about": "Site-selection settings shared by phase0/phase1/phase2/phase3 (v1.0, Boolean screening). Change values here, not in the Python code. Keys starting with '_' are notes and are ignored.",
+  "_about": "Site-selection settings shared by phase0/phase1/phase2/phase2b/phase3 (v2.0: Boolean screening + multi-criteria evaluation). Change values here, not in the Python code. Keys starting with '_' are notes and are ignored.",
 
   "paths": {
     "_note": "All paths are relative to the folder that contains this config file.",
@@ -34,7 +34,7 @@
     "roads": "roads",
     "rivers": "rivers",
     "urban": "urban",
-    "_optional_note": "Shown on the Phase 1 map only.",
+    "_optional_note": "Shown on the Phase 1 map; used by Phase 2b only when mce.constraints.water_setback or mce.factors.restaurant is enabled (both off by default).",
     "water": "water",
     "restaurants": "restaurants"
   },
@@ -99,11 +99,57 @@
     "geojson_precision": 6
   },
 
+  "mce": {
+    "_about": "Phase 2b - Multi-Criteria Evaluation (weighted linear combination). The values below are ILLUSTRATIVE teaching defaults: agree on them with your class.",
+
+    "constraints": {
+      "_note": "Hard 0/1 rules = 'is it allowed at all?'. Keep only true legal/physical limits here. Set enabled=false to turn one off.",
+      "area":    {"enabled": true, "min_sqm": 800, "max_sqm": 1200},
+      "urban":   {"enabled": true, "relation": "intersects"},
+      "river_setback":   {"enabled": true, "distance_m": 100},
+      "highway_setback": {"enabled": true, "distance_m": 25},
+      "_water_note": "OPTIONAL (off by default): keep buildings at least distance_m from any water.gpkg polygon (dams, reservoirs, ponds). Turn on as a class exercise.",
+      "water_setback":   {"enabled": false, "distance_m": 50}
+    },
+
+    "factors": {
+      "_note": "Standardised 0-1 by linear membership: score 0 at zero_at_m, score 1 at one_at_m. School: closer is better (wider range than the Boolean 1,000 m cut-off, so near-misses are scored, not dropped).",
+      "school":  {"zero_at_m": 1500, "one_at_m": 0},
+      "highway": {"zero_at_m": 25,   "one_at_m": 500},
+      "river":   {"zero_at_m": 100,  "one_at_m": 1000},
+      "_restaurant_note": "OPTIONAL (off by default): closer to a restaurant/amenity is better. When enabled it joins the weights below (AHP pairs or direct) as a 4th factor.",
+      "restaurant": {"enabled": false, "zero_at_m": 1500, "one_at_m": 0}
+    },
+
+    "weights": {
+      "_note": "method 'ahp' derives weights from pairwise comparisons (Saaty 1-9 scale; 'a/b': 3 means a is moderately more important than b). method 'direct' uses the numbers in 'direct'. Pairs/weights for a factor that is switched off are ignored.",
+      "method": "ahp",
+      "ahp_pairwise": {"school/highway": 3, "school/river": 3, "highway/river": 1,
+                       "school/restaurant": 5, "highway/restaurant": 2, "river/restaurant": 2},
+      "direct": {"school": 0.5, "highway": 0.25, "river": 0.25, "restaurant": 0.1}
+    },
+
+    "selection": {
+      "_note": "'match_boolean' selects as many sites as the Boolean result found (fair comparison); 'top_n' uses top_n; 'min_score' keeps every site with score >= min_score.",
+      "method": "match_boolean",
+      "top_n": 10,
+      "min_score": 0.6
+    },
+
+    "sensitivity": {
+      "_note": "Each weight is raised and lowered by weight_change (then re-normalised). stability = share of these scenarios in which a selected site stays selected.",
+      "enabled": true,
+      "weight_change": 0.2
+    }
+  },
+
   "web": {
     "_note": "Basemaps: 'osm' and 'esri_imagery' are allowed for teaching with attribution. satellite_max_px limits the local image overlay size so the HTML stays small.",
     "basemaps": ["osm", "esri_imagery"],
     "satellite_max_px": 2048,
     "satellite_opacity": 0.65,
-    "zoom_start": 15
+    "zoom_start": 15,
+    "_credit_note": "Shown in the dashboard footer and on the map's attribution line.",
+    "credit": {"text": "Prepared by Sallah · SALTCO Training", "url": "https://saltco.org", "url_label": "saltco.org"}
   }
 }

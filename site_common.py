@@ -51,8 +51,8 @@ DEFAULT_CONFIG: dict = {
         "roads": "roads",
         "rivers": "rivers",
         "urban": "urban",
-        "water": "water",              # Phase 1 map only
-        "restaurants": "restaurants",  # Phase 1 map only
+        "water": "water",              # optional - Phase 2b water setback
+        "restaurants": "restaurants",  # optional - Phase 2b restaurant factor
     },
     "fields": {
         "highway": "highway",
@@ -83,6 +83,29 @@ DEFAULT_CONFIG: dict = {
         "school": {"weight": 0.50, "zero_at_m": 1000.0, "one_at_m": 0.0},
         "highway": {"weight": 0.25, "zero_at_m": 100.0, "one_at_m": 500.0},
         "river": {"weight": 0.25, "zero_at_m": 300.0, "one_at_m": 1000.0},
+    },
+    "mce": {
+        "constraints": {
+            "area": {"enabled": True, "min_sqm": 800.0, "max_sqm": 1200.0},
+            "urban": {"enabled": True, "relation": "intersects"},
+            "river_setback": {"enabled": True, "distance_m": 100.0},
+            "highway_setback": {"enabled": True, "distance_m": 25.0},
+            "water_setback": {"enabled": False, "distance_m": 50.0},
+        },
+        "factors": {
+            "school": {"zero_at_m": 1500.0, "one_at_m": 0.0},
+            "highway": {"zero_at_m": 25.0, "one_at_m": 500.0},
+            "river": {"zero_at_m": 100.0, "one_at_m": 1000.0},
+            "restaurant": {"enabled": False, "zero_at_m": 1500.0, "one_at_m": 0.0},
+        },
+        "weights": {
+            "method": "ahp",
+            "ahp_pairwise": {"school/highway": 3, "school/river": 3, "highway/river": 1,
+                             "school/restaurant": 5, "highway/restaurant": 2, "river/restaurant": 2},
+            "direct": {"school": 0.5, "highway": 0.25, "river": 0.25, "restaurant": 0.1},
+        },
+        "selection": {"method": "match_boolean", "top_n": 10, "min_score": 0.6},
+        "sensitivity": {"enabled": True, "weight_change": 0.2},
     },
     "web": {
         "basemaps": ["osm", "esri_imagery"],
